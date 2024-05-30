@@ -53,7 +53,9 @@ export class AuthAdminController {
             }
             const administrator = await Administrator.findById(tokenWithData.administrator)
             administrator.confirmed=true
-            await Promise.allSettled([administrator.save(),tokenWithData.deleteOne()])
+            // await Promise.allSettled([administrator.save(),tokenWithData.deleteOne()])
+            await administrator.save()
+            await tokenWithData.deleteOne()
             
             //res.send('Cuenta confirmada correctamente, ahora puedes iniciar sesión')
             
@@ -196,7 +198,8 @@ export class AuthAdminController {
             const admin = await Administrator.findById(tokenWithData.administrator)
             admin.password = await hashPassword(req.body.password)
 
-            await Promise.allSettled([admin.save(), tokenWithData.deleteOne()])
+            await admin.save()
+            await tokenWithData.deleteOne()
             res.send('Password modified correctly')
         } catch (error) {
             res.status(500).json({ error: 'There was an error' })

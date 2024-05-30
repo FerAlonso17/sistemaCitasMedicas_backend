@@ -1,8 +1,8 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
-export interface IToken extends Document {
+export interface ITokenAffiliate extends Document {
     token:string
-    administrator:Types.ObjectId
+    affiliate:Types.ObjectId
     createdAt:Date
     expiresAt:Date
 }
@@ -12,9 +12,9 @@ const tokenSchema : Schema= new Schema({
         type: String,
         required: true
     },
-    administrator:{
+    affiliate:{
         type: Types.ObjectId,
-        ref: 'Administrator'
+        ref: 'Affiliate'
     },
     expiresAt:{
         type: Date,
@@ -25,5 +25,5 @@ const tokenSchema : Schema= new Schema({
 
 tokenSchema.index({expiresAt:1},{expireAfterSeconds:0})
 
-const Token = mongoose.model<IToken>('Token',tokenSchema)
-export default Token
+const TokenAffiliate = mongoose.model<ITokenAffiliate>('TokenAffiliate',tokenSchema)
+export default TokenAffiliate

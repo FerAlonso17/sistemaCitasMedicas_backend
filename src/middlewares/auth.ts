@@ -1,13 +1,13 @@
 import  {Request,Response,NextFunction} from 'express'
 import jwt from 'jsonwebtoken'
 import Administrator, {IAdministrator} from '../models/Administrator'
-import Affiliate, { IAffiliate } from '../models/Affiliate'
+import Patient, { IPatient } from '../models/Patient'
 
 declare global {
     namespace Express {
         interface Request{
             administrator?: IAdministrator
-            affiliate?: IAffiliate
+            patient?: IPatient
         }
     }
 }
@@ -50,9 +50,9 @@ export const authenticateAffiliate = async (req: Request,res:Response,next:NextF
     try {
         const decoded = jwt.verify(token,process.env.JWT_SECRET)
         if (typeof decoded === 'object' && decoded.id) {
-            const affiliate = await Affiliate.findById(decoded.id)
-            if (affiliate) {
-                req.affiliate=affiliate
+            const patient = await Patient.findById(decoded.id)
+            if (patient) {
+                req.patient=patient
                 next()
             } else {
                 res.status(500).json({error: 'Token no valid'})

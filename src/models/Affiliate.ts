@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IAffiliate extends Document {
     dni: string
     name: string
+    birthdate: string
 }
 
 const affiliateSchema : Schema = new Schema({
@@ -12,6 +13,10 @@ const affiliateSchema : Schema = new Schema({
         unique: true
     },
     name:{
+        type: String,
+        required: true
+    },
+    birthdate:{
         type: String,
         required: true
     }
