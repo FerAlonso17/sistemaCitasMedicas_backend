@@ -29,11 +29,11 @@ export const authenticateAdmin = async (req: Request,res:Response,next:NextFunct
                 req.administrator=administrator
                 next()
             } else {
-                res.status(500).json({error: 'Token no valid'})
+                res.status(500).json({error: 'Token no valid - 1'})
             }
         }
     } catch (error) {
-        res.status(500).json({error: 'Token no valid'})
+        res.status(500).json({error: 'Token no valid - 2'})
     }
 }
 
@@ -55,10 +55,10 @@ export const authenticateAffiliate = async (req: Request,res:Response,next:NextF
                 req.affiliate=affiliate
                 next()
             } else {
-                res.status(500).json({error: 'Token no valid'})
+                res.status(500).json({error: 'Token no valid - 3'})
             }
         }
     } catch (error) {
-        res.status(500).json({error: 'Token no valid'})
+        res.status(500).json({error: 'Token no valid - 4'})
     }
 }

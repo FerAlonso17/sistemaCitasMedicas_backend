@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { authenticateAffiliate } from "../middlewares/auth";
+import { authenticateAdmin } from "../middlewares/auth";
 import { body, param } from "express-validator";
 import { handleInputErrors } from "../middlewares/validation";
 import { RecordController } from "../controllers/RecordController";
 
 const router = Router();
 
-router.use(authenticateAffiliate);
+router.use(authenticateAdmin);
 
 // Crear un nuevo record
 router.post('/',
