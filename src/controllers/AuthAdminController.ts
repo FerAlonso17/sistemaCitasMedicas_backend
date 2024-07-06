@@ -25,9 +25,14 @@ export class AuthAdminController {
             admin.password = await hashPassword(password)
 
             //Generar token
-            const token = new Token()
-            token.token = generateToken()
-            token.administrator=admin.id
+            // const token = new Token()
+            // token.token = generateToken()
+            // token.administrator=admin.id
+            const token = new Token({
+                token: generateToken().token,
+                administrator: admin.id,
+                expiresAt: generateToken().expiresAt
+            });
 
             //enviar email
             AuthEmail.sendConfirmationEmail({
@@ -79,9 +84,11 @@ export class AuthAdminController {
 
             //verificar que la cuenta este confirmada
             if (!admin.confirmed) {
-                const token = new Token()
-                token.token = generateToken()
-                token.administrator= admin.id
+                const token = new Token({
+                    token: generateToken().token,
+                    administrator: admin.id,
+                    expiresAt: generateToken().expiresAt
+                });
                 await token.save()
                 AuthEmail.sendConfirmationEmail({
                     email: admin.email,
@@ -124,10 +131,11 @@ export class AuthAdminController {
             }
 
             //Generar el token
-            const token = new Token()
-            token.token = generateToken()
-            token.administrator = admin.id
-            //await token.save()
+            const token = new Token({
+                token: generateToken().token,
+                administrator: admin.id,
+                expiresAt: generateToken().expiresAt
+            });
 
             //enviar el email
             AuthEmail.sendConfirmationEmail({
@@ -155,9 +163,11 @@ export class AuthAdminController {
             }
 
             //Generar el token
-            const token = new Token()
-            token.token = generateToken()
-            token.administrator = admin.id
+            const token = new Token({
+                token: generateToken().token,
+                administrator: admin.id,
+                expiresAt: generateToken().expiresAt
+            });
             await token.save()
 
             //enviar el email

@@ -66,9 +66,11 @@ export class AuthAffiliateController {
             patient.password = await hashPassword(password)
 
             //Generar token
-            const token = new TokenAffiliate()
-            token.token = generateToken()
-            token.affiliate = patient.id
+            const token = new TokenAffiliate({
+                token: generateToken().token,
+                affiliate: patient.id,
+                expiresAt: generateToken().expiresAt
+            });
 
             //enviar email
             AuthPatientEmail.sendConfirmationEmail({
@@ -109,43 +111,45 @@ export class AuthAffiliateController {
         }
     }
 
-    static login = async (req:Request,res:Response)=>{
+    static login = async (req: Request, res: Response) => {
         try {
-            const {email,password} = req.body
-            const patient = await Patient.findOne({email})
+            const { email, password } = req.body
+            const patient = await Patient.findOne({ email })
             //verificar que exista el user
             if (!patient) {
-                const error= new Error('User no exist')
-                return res.status(404).json({error:error.message})
+                const error = new Error('User no exist')
+                return res.status(404).json({ error: error.message })
             }
 
             //verificar que la cuenta este confirmada
             if (!patient.confirmed) {
-                const token = new TokenAffiliate()
-                token.token = generateToken()
-                token.affiliate= patient.id
+                const token = new TokenAffiliate({
+                    token: generateToken().token,
+                    affiliate: patient.id,
+                    expiresAt: generateToken().expiresAt
+                });
                 await token.save()
                 AuthPatientEmail.sendConfirmationEmail({
                     email: patient.email,
                     name: `${patient.firstName} ${patient.lastName}`,
                     token: token.token
                 })
-                const error= new Error('Account no confirmed, we have sent a new confirmation email')
-                return res.status(401).json({error:error.message})
+                const error = new Error('Account no confirmed, we have sent a new confirmation email')
+                return res.status(401).json({ error: error.message })
             }
 
             //verificar pswd
-            const isPasswordCorrect = await checkPassword(password,patient.password)
+            const isPasswordCorrect = await checkPassword(password, patient.password)
             if (!isPasswordCorrect) {
-                const error= new Error('Password incorrect')
-                return res.status(404).json({error:error.message})
+                const error = new Error('Password incorrect')
+                return res.status(404).json({ error: error.message })
             }
 
             //generar jwt
-            const jwt = generateJWT({id: patient.id})
+            const jwt = generateJWT({ id: patient.id })
             res.send(jwt)
         } catch (error) {
-            res.status(500).json({error: 'There was an error'})
+            res.status(500).json({ error: 'There was an error' })
         }
     }
 
@@ -166,10 +170,11 @@ export class AuthAffiliateController {
             }
 
             //Generar el token
-            const token = new TokenAffiliate()
-            token.token = generateToken()
-            token.affiliate = patient.id
-            //await token.save()
+            const token = new TokenAffiliate({
+                token: generateToken().token,
+                affiliate: patient.id,
+                expiresAt: generateToken().expiresAt
+            });
 
             //enviar el email
             AuthPatientEmail.sendConfirmationEmail({
@@ -197,9 +202,11 @@ export class AuthAffiliateController {
             }
 
             //Generar el token
-            const token = new TokenAffiliate()
-            token.token = generateToken()
-            token.affiliate = patient.id
+            const token = new TokenAffiliate({
+                token: generateToken().token,
+                affiliate: patient.id,
+                expiresAt: generateToken().expiresAt
+            });
             await token.save()
 
             //enviar el email
@@ -215,13 +222,13 @@ export class AuthAffiliateController {
         }
     }
 
-    static validateToken = async (req: Request, res: Response)=>{
+    static validateToken = async (req: Request, res: Response) => {
         try {
-            const {token} = req.body
-            const tokenWithData = TokenAffiliate.findOne({token})
+            const { token } = req.body
+            const tokenWithData = TokenAffiliate.findOne({ token })
             if (!tokenWithData) {
                 const error = new Error('Token no valid')
-                return res.status(404).json({error: error.message})
+                return res.status(404).json({ error: error.message })
             }
             res.send('Token válid, define your new password')
         } catch (error) {
@@ -229,13 +236,13 @@ export class AuthAffiliateController {
         }
     }
 
-    static updatePasswordWithToken = async (req: Request, res: Response)=>{
+    static updatePasswordWithToken = async (req: Request, res: Response) => {
         try {
-            const {token} = req.params
-            const tokenWithData = await TokenAffiliate.findOne({token})
+            const { token } = req.params
+            const tokenWithData = await TokenAffiliate.findOne({ token })
             if (!tokenWithData) {
                 const error = new Error('Token no valid')
-                return res.status(404).json({error: error.message})
+                return res.status(404).json({ error: error.message })
             }
             const patient = await Patient.findById(tokenWithData.affiliate)
             patient.password = await hashPassword(req.body.password)

@@ -14,30 +14,31 @@ const stateList = {
     PENDING:'Pending',
     RESCHEDULED:'Rescheduled',
     FINISHED:'Finished',
-    DAY_OF_APPOINTMENT:'Day of appointment'
+    DAY_OF_APPOINTMENT:'Day_of_appointment'
 }
 export type StateList = typeof stateList[keyof typeof stateList]
 
 export interface IAppointment extends Document {
-    affiliate: Types.ObjectId
+    patient: Types.ObjectId
     doctor: Types.ObjectId
-    hospital: Types.ObjectId //habrá un modelo de hospitales también
+    hospital: Types.ObjectId
     speciality: SpecialityList
     dateAppointment: Date
     state: StateList
     orderAttention:number
 }
 
-const AppointmentSchema:Schema = new Schema({
-    affiliate: {
+const appointmentSchema:Schema = new Schema({
+    patient: {
         type: Types.ObjectId,
-        ref:'Affiliate',
+        ref:'Patient',
         required:true
     },
     doctor: {
         type: Types.ObjectId,
         ref:'Doctor',
-        required:true
+        required:true,
+        default: null
     },
     hospital: {
         type: Types.ObjectId,
@@ -63,5 +64,5 @@ const AppointmentSchema:Schema = new Schema({
     }
 },{timestamps:true})
 
-const Appointment = mongoose.model<IAppointment>('Appointment',AppointmentSchema)
+const Appointment = mongoose.model<IAppointment>('Appointment',appointmentSchema)
 export default Appointment

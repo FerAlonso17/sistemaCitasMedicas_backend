@@ -15,7 +15,7 @@ export interface IDoctor extends Document {
     name:string
     dni:string
     speciality: SpecialityDoctor
-    appointmentByDay: number
+    //appointmentByDay: number
 }
 
 const doctorSchema: Schema = new Schema({
@@ -34,11 +34,11 @@ const doctorSchema: Schema = new Schema({
         type: String,
         enum: Object.values(specialityDoctor),
         default: null
-    },
-    appointmentByDay: {
+    }
+    /*appointmentByDay: {
         type: Number,
         default: 10
-    }
+    }*/
 })
 
 const Doctor = mongoose.model<IDoctor>('Doctor',doctorSchema)

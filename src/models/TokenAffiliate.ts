@@ -4,7 +4,7 @@ export interface ITokenAffiliate extends Document {
     token:string
     affiliate:Types.ObjectId
     createdAt:Date
-    expiresAt:Date
+    // expiresAt:Date
 }
 
 const tokenSchema : Schema= new Schema({
@@ -18,12 +18,11 @@ const tokenSchema : Schema= new Schema({
     },
     expiresAt:{
         type: Date,
-        default: Date.now(),
-        expires: '10m' 
+        required: true,
+        // default: Date.now(),
+        // expires: '30m' 
     }
 })
-
-tokenSchema.index({expiresAt:1},{expireAfterSeconds:0})
 
 const TokenAffiliate = mongoose.model<ITokenAffiliate>('TokenAffiliate',tokenSchema)
 export default TokenAffiliate

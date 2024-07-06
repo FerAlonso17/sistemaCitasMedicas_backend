@@ -14,15 +14,12 @@ export type SpecialityDoctor = typeof specialityDoctor[keyof typeof specialityDo
 
 export interface IRecord extends Document {
     dateRecord: Date
-    hospitalRecord: {
-        hospitalR: Types.ObjectId,
-        specialityRecord: {
-            specialityR:SpecialityDoctor,
-            doctorRecord: {
-                doctorR: Types.ObjectId,
-                numberAppointment: number
-                appointmentsRecord: PopulatedDoc<IAppointment & Document>[]
-            }[]
+    specialityRecord: {
+        specialityR:SpecialityDoctor,
+        doctorRecord: {
+            doctorR: Types.ObjectId,
+            numberAppointment: number
+            appointmentsRecord: PopulatedDoc<IAppointment & Document>[]
         }[]
     }[]
 }
@@ -32,38 +29,29 @@ const recordSchema: Schema = new Schema({
         type: Date,
         required: true
     },
-    hospitalRecord:[
+    specialityRecord:[
         {
-            hospitalR:{
-                type:Types.ObjectId,
-                ref:'Hospital',
-                required: true
+            specialityR:{
+                type: String,
+                enum: Object.values(specialityDoctor),
+                default: null
             },
-            specialityRecord:[
+            doctorRecord: [
                 {
-                    specialityR:{
-                        type: String,
-                        enum: Object.values(specialityDoctor),
+                    doctorR: {
+                        type: Types.ObjectId,
+                        ref: 'Doctor',
+                        required: true,
                         default: null
                     },
-                    doctorRecord: [
+                    numberAppointment: {
+                        type: Number,
+                        default: 10
+                    },
+                    appointmentsRecord: [
                         {
-                            doctorR: {
-                                type: Types.ObjectId,
-                                ref: 'Doctor',
-                                required: true,
-                                default: null
-                            },
-                            numberAppointment: {
-                                type: Number,
-                                default: 10
-                            },
-                            appointmentsRecord: [
-                                {
-                                    type: Types.ObjectId,
-                                    ref: 'Appointment'
-                                }
-                            ]
+                            type: Types.ObjectId,
+                            ref: 'Appointment'
                         }
                     ]
                 }

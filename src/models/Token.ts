@@ -4,7 +4,7 @@ export interface IToken extends Document {
     token:string
     administrator:Types.ObjectId
     createdAt:Date
-    expiresAt:Date
+    // expiresAt:Date
 }
 
 const tokenSchema : Schema= new Schema({
@@ -18,12 +18,11 @@ const tokenSchema : Schema= new Schema({
     },
     expiresAt:{
         type: Date,
-        default: Date.now(),
-        expires: '10m' 
+        required: true,
+        // default: Date.now(),
+        // expires: '30m' 
     }
 })
-
-tokenSchema.index({expiresAt:1},{expireAfterSeconds:0})
 
 const Token = mongoose.model<IToken>('Token',tokenSchema)
 export default Token

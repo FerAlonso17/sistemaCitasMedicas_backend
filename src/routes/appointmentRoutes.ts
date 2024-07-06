@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateAffiliate } from "../middlewares/auth";
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import { handleInputErrors } from "../middlewares/validation";
 import { AppointmentController } from "../controllers/AppointmentController";
 
@@ -11,6 +11,34 @@ router.use(authenticateAffiliate)
 //paciente podrá registrar o crear su cita
 router.post('/',
     body('doctor')
+        .notEmpty().withMessage('Doctor required'),
+    body('hospital')
+        .notEmpty().withMessage('Hospital required'),
+    body('speciality')
+        .notEmpty().withMessage('Speciality required'),
+    body('dateAppointment')
+        .notEmpty().withMessage('Date of appointment required'),
+    handleInputErrors,
+    AppointmentController.registerAppointment
+)
+
+//obtener las citas por afiliado
+router.get('/',
+    AppointmentController.getAppointmentsByAffiliate
+)
+//obtener doctores
+router.get('/doctors',
+    AppointmentController.getDoctors
+)
+//obtener hospitales
+router.get('/hospitals',
+    AppointmentController.getHospitals
+)
+
+//actualizarlas
+router.put('/:id',
+    param('id').isMongoId().withMessage('Id no valid'),
+    body('doctor')
         .notEmpty().withMessage('Doctor requerided'),
     body('hospital')
         .notEmpty().withMessage('Hospital requerided'),
@@ -19,12 +47,21 @@ router.post('/',
     body('dateAppointment')
         .notEmpty().withMessage('Date of appointment requerided'),
     handleInputErrors,
-    AppointmentController.createAppointment
+    AppointmentController.updateAppointmentById
 )
-//obtener todas su citas para imprimirlas en la interfaz
-//actualizarlas
+
 //cancelarlas(eliminar de la DB)
-//el sistema actualizará la cita a día de cita en el día de la cita
-//el sistema actualizará la cita a finalizada una vez que haya pasado el día de la cita
+router.delete('/:id',
+    param('id').isMongoId().withMessage('Id no valid'),
+    handleInputErrors,
+    AppointmentController.deleteAppointmentsByAffiliate
+)
+
+router.get('/:id',
+    param('id').isMongoId().withMessage('Id no valid'),
+    handleInputErrors,
+    AppointmentController.getAppointmentById
+)
+
 
 export default router
