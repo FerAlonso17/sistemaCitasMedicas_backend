@@ -1,5 +1,5 @@
 export const generateToken = () => {
-    // Generate random token string
+    // Generate random token string.
     const randomToken = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Set expiry time to 10 minutes from now
