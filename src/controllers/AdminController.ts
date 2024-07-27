@@ -19,14 +19,14 @@ export class AdminController {
             }
 
             //encontrar registro por la fecha y lanzar error si es que ya existe
-            const recordExist = await Record.findOne({dateRecord})
+            const recordExist = await Record.findOne({ dateRecord })
             if (recordExist) {
                 const error = new Error('Record already exists')
                 return res.status(400).json({ error: error.message })
             }
 
             //encontrar doctor
-            const doctorExist= await Doctor.findOne({name:doctorR})
+            const doctorExist = await Doctor.findById(doctorR)
             if (!doctorExist) {
                 const error = new Error('Doctor no valid')
                 return res.status(404).json({ error: error.message })
@@ -37,18 +37,243 @@ export class AdminController {
             record.specialityRecord = [{
                 specialityR: specialityR,
                 doctorRecord: [{
-                    doctorR: doctorExist.id,
-                    numberAppointment: numberAppointment,
+                    doctorR,
+                    numberAppointment,
                     appointmentsRecord: [] // inicializar con un array vacío
                 }]
             }]
-
             await record.save()
             res.send('Record created correctly')
         } catch (error) {
             res.status(500).json('There was an error*')
         }
     }
+
+    static addDoctorToRecord = async (req: Request, res: Response) => {
+        const { id } = req.params
+        const { specialityR, doctorR, numberAppointment } = req.body
+        try {
+            const record = await Record.findById(id)
+            if (!record) {
+                const error = new Error('Record not found')
+                return res.status(404).json({ error: error.message })
+            }
+            const doctorExist = await Doctor.findById(doctorR)
+            if (!doctorExist) {
+                const error = new Error('Doctor no valid')
+                return res.status(404).json({ error: error.message })
+            }
+
+            // Buscar el índice de la especialidad coincidente
+            const matchingSpecialityIndex = record.specialityRecord.findIndex(
+                (item) => item.specialityR === specialityR
+            );
+            if (matchingSpecialityIndex === -1) {
+                record.specialityRecord.push({
+                    specialityR,
+                    doctorRecord: [{
+                        doctorR,
+                        numberAppointment,
+                        appointmentsRecord: []
+                    }]
+                })
+            } else {
+                const matchingDoctorIndex = record.specialityRecord[matchingSpecialityIndex].doctorRecord.findIndex(
+                    (item) => item.doctorR.toString() === doctorR.toString()
+                );
+                if (matchingDoctorIndex !== -1) {
+                    const error = new Error('Doctor already exists for this specialty');
+                    return res.status(400).json({ error: error.message });
+                } else {
+                    // Add the doctor to the existing specialty record
+                    record.specialityRecord[matchingSpecialityIndex].doctorRecord.push({ doctorR, numberAppointment, appointmentsRecord: [] });
+                }
+            }
+            await record.save()
+            res.send('Register updated correctly')
+        } catch (error) {
+            res.status(500).json('There was an error*')
+        }
+    }
+
+    static deleteSpecialityOfRecord = async (req: Request, res: Response) => {
+        //Si ya hay citas se tiene q reprogramar, si no normal
+        const { id } = req.params
+
+        try {
+            const record = await Record.findById(id)
+            if (!record) {
+                const error = new Error('Record not found')
+                return res.status(404).json({ error: error.message })
+            }
+
+            // Buscar el índice de la especialidad coincidente
+            const matchingSpecialityIndex = record.specialityRecord.findIndex(
+                (item) => item.specialityR === req.body.specialityR
+            );
+
+            if (matchingSpecialityIndex === -1) {
+                // Especialidad no encontrada, no hay nada que eliminar
+                return res.status(400).json({ error: 'Speciality not found' });
+            }
+
+            // Verificar si hay citas en la especialidad
+            const hasAppointments = record.specialityRecord[matchingSpecialityIndex].doctorRecord.some(
+                (doctor) => doctor.appointmentsRecord.length > 0
+            );
+
+            if (hasAppointments) {
+                return res.status(400).json({ error: 'You have to reschedule appointments before' });
+            }
+
+            // Eliminación segura: eliminar la especialidad coincidente del array
+            record.specialityRecord.splice(matchingSpecialityIndex, 1);
+            await record.save()
+            res.send('Updated correctly')
+        } catch (error) {
+            res.status(500).json('There was an error*')
+        }
+    }
+
+    static deleteDoctorFromRecord = async (req: Request, res: Response) => {
+        const { id } = req.params
+        const { specialityR, doctorR } = req.body;
+
+        try {
+            const record = await Record.findById(id)
+            if (!record) {
+                const error = new Error('Record not found')
+                return res.status(404).json({ error: error.message })
+            }
+
+            // Buscar el índice de la especialidad coincidente
+            const matchingSpecialityIndex = record.specialityRecord.findIndex(
+                (item) => item.specialityR === specialityR
+            );
+            if (matchingSpecialityIndex === -1) {
+                // Especialidad no encontrada, no hay nada que eliminar
+                return res.status(400).json({ error: 'Speciality not found' });
+            }
+
+            //Buscar el índice del doctor coincidente
+            const matchingDoctorIndex = record.specialityRecord[matchingSpecialityIndex].doctorRecord.findIndex((item) => item.doctorR.toString() === doctorR.toString())
+            if (matchingDoctorIndex === -1) {
+                // Doctor no encontrado, no hay nada que eliminar
+                return res.status(400).json({ error: 'Doctor not found' });
+            }
+            // Verificar si hay citas en la especialidad
+            const hasAppointments = record.specialityRecord[matchingSpecialityIndex].doctorRecord[matchingDoctorIndex].appointmentsRecord.some(
+                (doctor) => doctor.appointmentsRecord.length > 0
+            );
+
+            if (hasAppointments) {
+                return res.status(400).json({ error: 'You have to reschedule appointments before' });
+            }
+            if (record.specialityRecord[matchingSpecialityIndex].doctorRecord.length==1) {
+                record.specialityRecord.splice(matchingSpecialityIndex, 1);
+            } else {
+                // Eliminación segura: eliminar la especialidad coincidente del array
+                record.specialityRecord[matchingSpecialityIndex].doctorRecord.splice(matchingDoctorIndex, 1);
+            }
+
+            await record.save()
+            res.send('Updated correctly')
+        } catch (error) {
+            res.status(500).json('There was an error*')
+        }
+    }
+
+    static updateNumberAppointments = async (req: Request, res: Response) => {
+        const { id } = req.params
+        const { specialityR, doctorR, numberAppointment } = req.body
+        try {
+            const recordExist = await Record.findById(id)
+            if (!recordExist) {
+                const error = new Error('Record not found')
+                return res.status(404).json({ error: error.message })
+            }
+            const matchingSpecialityRecord = recordExist.specialityRecord.find(item => {
+                return item.specialityR.toString() === specialityR.toString()
+            })
+            if (!matchingSpecialityRecord) {
+                const error = new Error('Speciality no valid')
+                return res.status(404).json({ error: error.message })
+            }
+            const matchingDoctorRecord = matchingSpecialityRecord.doctorRecord.find(item => {
+                return item.doctorR.toString() === doctorR.toString()
+            })
+            if (!matchingDoctorRecord) {
+                const error = new Error('Doctor no valid')
+                return res.status(404).json({ error: error.message })
+            }
+            if (matchingDoctorRecord.appointmentsRecord.length === 0 || numberAppointment > matchingDoctorRecord.numberAppointment) {
+                matchingDoctorRecord.numberAppointment = numberAppointment
+                await recordExist.save()
+                res.send('Updated correctly')
+            } else {
+                const error = new Error('You have to reschedule appointments before')
+                return res.status(400).json({ error: error.message })
+            }
+        } catch (error) {
+            res.status(500).json('There was an error*')
+        }
+    }
+
+    static getRecordById = async (req: Request, res: Response) => {
+        const { id } = req.params
+        try {
+            const record = await Record.findById(id).populate({ path: 'specialityRecord.doctorRecord.doctorR', select: 'name speciality' })
+            if (!record) {
+                const error = new Error('Record not found')
+                return res.status(404).json({ error: error.message })
+            }
+            res.json(record)
+        } catch (error) {
+            res.status(500).json('There was an error*')
+        }
+    }
+
+    static getRecordByDate = async (req: Request, res: Response) => {
+        const { dateRecord } = req.params
+        try {
+            const record = await Record.findOne({ dateRecord }).populate({ path: 'specialityRecord.doctorRecord.doctorR', select: 'name speciality' })
+            if (!record) {
+                const error = new Error('Record not found')
+                return res.status(404).json({ error: error.message })
+            }
+            res.json(record)
+        } catch (error) {
+            res.status(500).json('There was an error*')
+        }
+    }
+    //Reprogramar uno
+    // static rescheduleOneApointment = async (req: Request, res: Response)=> {
+    //     const {idRecordToChange,idAppointmentToChange} = req.params
+    //     const { dateRecord, specialityR, doctorR } = req.body
+    //     try {
+    //         const recordExist = await Record.findOne({ dateRecord })
+    //         if (!recordExist) {
+    //             const error = new Error('Record not found')
+    //             return res.status(404).json({ error: error.message })
+    //         }
+
+    //         //Speciality
+    //         const matchingSpecialityRecord = recordExist.specialityRecord.find(item => {
+    //             return item.specialityR.toString() === specialityR.toString()
+    //         })
+    //         const matchingDoctorRecord = matchingSpecialityRecord.doctorRecord.find(item => {
+    //             return item.doctorR.toString() === doctorR.id.toString()
+    //         })
+    //         matchingDoctorRecord.appointmentsRecord.push(idAppointmentToChange)
+    //         //actualizar fecha,numero de orden y eliminar de registro anterior
+    //         await record.save()
+    //         res.send('Register updated correctly')
+    //     } catch (error) {
+    //         res.status(500).json('There was an error*')
+    //     }
+    // }
+
+    //Reprogramar todo
 
     // static updateDateRecord = async (req: Request, res: Response) => {
     //     //Validar que el doctor no se duplique
@@ -78,16 +303,16 @@ export class AdminController {
     //     } catch (error) {
 
     //     }
-    // }
+    // }z
 
-    static registerDoctor = async (req: Request, res: Response)=>{
+    static registerDoctor = async (req: Request, res: Response) => {
         try {
             const doctor = new Doctor(req.body)
 
-            const doctorExist = await Doctor.findOne({dni:doctor.dni})
+            const doctorExist = await Doctor.findOne({ dni: doctor.dni })
             if (doctorExist) {
                 const error = new Error('Doctor already exists')
-                return res.status(400).json({error:error.message})
+                return res.status(400).json({ error: error.message })
             }
 
             await doctor.save()
@@ -97,13 +322,13 @@ export class AdminController {
         }
     }
 
-    static getDoctorById = async (req: Request<{id:string},{},IDoctor>, res: Response)=>{
-        const {id} = req.params
+    static getDoctorById = async (req: Request<{ id: string }, {}, IDoctor>, res: Response) => {
+        const { id } = req.params
         try {
             const doctor = await Doctor.findById(id)
             if (!doctor) {
                 const error = new Error('Doctor not found!')
-                return res.status(404).json({error:error.message})
+                return res.status(404).json({ error: error.message })
             }
             res.json(doctor)
         } catch (error) {
@@ -111,7 +336,7 @@ export class AdminController {
         }
     }
 
-    static getDoctors = async (req: Request,res:Response)=>{
+    static getDoctors = async (req: Request, res: Response) => {
         try {
             const doctors = await Doctor.find()
             res.json(doctors)
@@ -120,20 +345,20 @@ export class AdminController {
         }
     }
 
-    static updateDoctor = async (req: Request<{id:string},{},IDoctor>,res:Response)=>{
-        const {id} = req.params
+    static updateDoctor = async (req: Request<{ id: string }, {}, IDoctor>, res: Response) => {
+        const { id } = req.params
         try {
             const doctor = await Doctor.findById(id)
 
             if (!doctor) {
                 const error = new Error('Doctor not found!')
-                return res.status(404).json({error:error.message})
+                return res.status(404).json({ error: error.message })
             }
 
-            const doctorExist = await Doctor.findOne({dni:req.body.dni})
-            if (doctorExist && doctorExist.dni.toString()!==doctor.dni.toString()) {
+            const doctorExist = await Doctor.findOne({ dni: req.body.dni })
+            if (doctorExist && doctorExist.dni.toString() !== doctor.dni.toString()) {
                 const error = new Error('Doctor already exists')
-                return res.status(400).json({error:error.message})
+                return res.status(400).json({ error: error.message })
             }
 
             doctor.name = req.body.name
@@ -147,13 +372,13 @@ export class AdminController {
         }
     }
 
-    static deleteDoctor = async (req: Request<{id:string},{},IDoctor>, res: Response)=>{
-        const {id} = req.params
+    static deleteDoctor = async (req: Request<{ id: string }, {}, IDoctor>, res: Response) => {
+        const { id } = req.params
         try {
             const doctor = await Doctor.findById(id)
             if (!doctor) {
                 const error = new Error('Doctor not found!')
-                return res.status(404).json({error:error.message})
+                return res.status(404).json({ error: error.message })
             }
             await doctor.deleteOne()
             res.send('Doctor deleted correctly')

@@ -7,6 +7,7 @@ import authAdminRoutes from './routes/authAdminRoutes'
 import authAffiliateRoutes from './routes/authAffiliateRoutes'
 import appointmentRoutes from './routes/appointmentRoutes'
 import adminRoutes from './routes/adminRoutes'
+import recordRoutes from './routes/recordRoutes'
 import { corsConfig } from "./config/cors";
 
 configDotenv()
@@ -23,7 +24,7 @@ app.use(express.json())
 app.use('/api/auth', authAdminRoutes)
 app.use('/api/affiliate/auth',authAffiliateRoutes)
 app.use('/api/affiliate/appointments',appointmentRoutes)
-app.use('/api/admin/records',adminRoutes)
+app.use('/api/admin/records',recordRoutes)
 app.use('/api/admin/doctors',adminRoutes)
 
 export default app

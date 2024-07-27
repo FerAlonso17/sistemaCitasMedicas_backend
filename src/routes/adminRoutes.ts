@@ -8,24 +8,7 @@ const router = Router()
 
 router.use(authenticateAdmin)
 
-//crear un nuevo registro para el día
-router.post('/manageRecord',
-    body('dateRecord')
-        .notEmpty().withMessage('Date of appointment required'),
-    body('specialityR')
-        .notEmpty().withMessage('Speciality required'),
-    body('doctorR')
-        .notEmpty().withMessage('Doctor required'),
-    body('numberAppointment')
-        .notEmpty().withMessage('Number required'),
-    handleInputErrors,
-    AdminController.createRecord
-)
-
-//agregar especialidad al registro del día
-
-//agregar doctorR al registro del día
-
+/***********DOCTORS****************** */
 //registrar doctor
 router.post('/',
     body('name')
@@ -40,12 +23,13 @@ router.post('/',
 
 //obtener doctor
 router.get('/:id',
+    param('id').isMongoId().withMessage('Id no valid'),
+    handleInputErrors,
     AdminController.getDoctorById
 )
 router.get('/',
     AdminController.getDoctors
 )
-
 
 router.put('/:id',
     param('id').isMongoId().withMessage('Id no valid'),

@@ -13,21 +13,29 @@ export class AppointmentController {
         appointment.patient = req.patient.id
 
         //Validar si no existe una cita para el mismo paciente el mismo día
-        const appointmentExist = await Appointment.findOne({ patient: appointment.patient })
+        const appointmentExist = await Appointment.find({
+            patient: appointment.patient,
+            speciality: appointment.speciality
+        })
         const formatDate = 'DD/MM/YYYY'
-        // const fecha=moment(appointmentExist.dateAppointment).toString().substring(0,15)
-        const fecha=moment(appointmentExist.dateAppointment)
-        const fechaformateada=fecha.format(formatDate)
-        const fecha2=moment(req.body.dateAppointment).toString().substring(0,15)
-        const fecha3=req.body.dateAppointment
-        // if (appointmentExist && fecha.toString().substring(0,15) === fecha2.toString().substring(0,15)) {
-        //     const error = new Error('You already have an appointment for that day')
-        //     return res.status(400).json({ error: error.message })
-        // }
+        if (appointmentExist) {
+            for (let index = 0; index < appointmentExist.length; index++) {
+                const fechaExistente = moment(appointmentExist[index].dateAppointment).format(formatDate)
+                const fechaIngresada = moment(appointment.dateAppointment).format(formatDate)
+                if (fechaExistente === fechaIngresada) {
+                    const error = new Error('You already have an appointment for that day')
+                    return res.status(400).json({ error: error.message })
+                }
+                if (appointmentExist[index].state !== ('Finished')) {
+                    const error = new Error('You already have an appointment pending for that specialty')
+                    return res.status(400).json({ error: error.message })
+                }
+            }
+        }
 
         //validar la fecha(En un lapso de 1 a 15 días después del día de registro)
-        const minDate = moment().add(0, 'days')
-        const maxDate = moment().add(14, 'days')
+        const minDate = moment().add(0, 'days').startOf('day')
+        const maxDate = moment().add(14, 'days').startOf('day')
         const dateAppointmentValid = moment.isDate(appointment.dateAppointment) && moment(appointment.dateAppointment).isAfter(minDate) && moment(appointment.dateAppointment).isBefore(maxDate)
         if (!dateAppointmentValid) {
             const error = new Error('You can only register your appointment in a range of 15 days')
@@ -63,8 +71,7 @@ export class AppointmentController {
         //Primero se valida trayendo al registro que haga match con la especialidad
         const matchingSpecialityRecord = recordOfDay.specialityRecord.find(item => {
             return item.specialityR.toString() === req.body.speciality.toString()
-        }
-        )
+        })
         if (!matchingSpecialityRecord) {
             const error = new Error('Speciality no valid')
             return res.status(404).json({ error: error.message })
@@ -72,8 +79,7 @@ export class AppointmentController {
         //Segundo se valida trayendo al registro que haga match con el doctor
         const matchingDoctorRecord = matchingSpecialityRecord.doctorRecord.find(item => {
             return item.doctorR.toString() === doctorExist.id.toString()
-        }
-        )
+        })
         if (!matchingDoctorRecord) {
             const error = new Error('Doctor no valid')
             return res.status(404).json({ error: error.message })
@@ -94,9 +100,8 @@ export class AppointmentController {
         matchingDoctorRecord.appointmentsRecord.push(appointment.id)
 
         try {
-            //await Promise.allSettled([appointment.save(), recordOfDay.save()])
-            // res.send('Appointment registered correctly '+fecha+' '+fecha2)
-            res.send(fechaformateada)
+            await Promise.allSettled([appointment.save(), recordOfDay.save()])
+            res.send('Appointment registered correctly')
         } catch (error) {
             res.status(500).json('There was an error*')
         }
@@ -107,15 +112,17 @@ export class AppointmentController {
             const appointments = await Appointment.find({ patient: req.patient.id })
                 .populate({ path: 'doctor', select: 'name' })
                 .populate('hospital')
-            
+
             for (let i = 0; i < appointments.length; i++) {
                 const appointment = appointments[i];
-                const appointmentDate = moment.utc(appointment.dateAppointment).startOf("day")
-                const today = moment.utc().startOf('day')
-                if (appointmentDate.isSame(today)) {
-                    appointment.state='Day_of_appointment'
-                }else if(appointmentDate.isBefore(today)){
-                    appointment.state='Finished'
+
+                const appointmentDate = moment.utc(appointment.dateAppointment).add(1, 'day')
+                const today = moment.utc()
+
+                if (appointmentDate.isSame(today, 'day')) {
+                    appointment.state = 'Day_of_appointment'
+                } else if (appointmentDate.isBefore(today, 'day')) {
+                    appointment.state = 'Finished'
                 }
                 await appointment.save()
             }
@@ -158,7 +165,7 @@ export class AppointmentController {
             for (let i = 0; i < matchingDoctorRecordToDelete.appointmentsRecord.length; i++) {
                 const appointmentId = matchingDoctorRecordToDelete.appointmentsRecord[i];
                 const otherAppointment = await Appointment.findById(appointmentId);
-                otherAppointment.orderAttention = i+1;
+                otherAppointment.orderAttention = i + 1;
                 await otherAppointment.save();
             }
 
@@ -168,6 +175,27 @@ export class AppointmentController {
             if (enteredDate.isBefore(moment()) || enteredDate.isAfter(maximumDate)) {
                 const error = new Error('You can only register your appointment in a range of 15 days')
                 return res.status(400).json({ error: error.message })
+            }
+
+            //Validar si no existe una cita para el mismo paciente el mismo día
+            const appointmentExist = await Appointment.find({
+                patient: appointment.patient,
+                speciality: appointment.speciality
+            })
+            const formatDate = 'DD/MM/YYYY'
+            if (appointmentExist) {
+                for (let index = 0; index < appointmentExist.length; index++) {
+                    const fechaExistente = moment(appointmentExist[index].dateAppointment).format(formatDate)
+                    const fechaIngresada = moment(appointment.dateAppointment).format(formatDate)
+                    if ((fechaExistente === fechaIngresada) && (appointmentExist[index].id !== appointment.id)) {
+                        const error = new Error('You already have an appointment for that day')
+                        return res.status(400).json({ error: error.message })
+                    }
+                    if ((appointmentExist[index].state !== ('Finished')) && (appointmentExist[index].id !== appointment.id)) {
+                        const error = new Error('You already have an appointment pending for that specialty')
+                        return res.status(400).json({ error: error.message })
+                    }
+                }
             }
 
             //validar si existe doctor y si existe asignar su id al registro de cita
@@ -268,10 +296,10 @@ export class AppointmentController {
             for (let i = 0; i < matchingDoctorRecordToDelete.appointmentsRecord.length; i++) {
                 const appointmentId = matchingDoctorRecordToDelete.appointmentsRecord[i];
                 const otherAppointment = await Appointment.findById(appointmentId);
-                otherAppointment.orderAttention = i+1;
+                otherAppointment.orderAttention = i + 1;
                 await otherAppointment.save();
             }
-            
+
             await Promise.allSettled([appointment.deleteOne(), recordToDelete.save()])
             res.send('Appointment cancelled')
         } catch (error) {
@@ -279,8 +307,8 @@ export class AppointmentController {
         }
     }
 
-    static getAppointmentById = async (req: Request<{ id: string }, {}, IAppointment>,res:Response)=>{
-        const {id} = req.params
+    static getAppointmentById = async (req: Request<{ id: string }, {}, IAppointment>, res: Response) => {
+        const { id } = req.params
         try {
             const appointment = await Appointment.findById(id)
                 .populate({ path: 'doctor', select: 'name' })
@@ -300,7 +328,7 @@ export class AppointmentController {
         }
     }
 
-    static getDoctors = async (req: Request,res:Response)=>{
+    static getDoctors = async (req: Request, res: Response) => {
         try {
             const doctors = await Doctor.find()
             res.json(doctors)
@@ -308,8 +336,8 @@ export class AppointmentController {
             res.status(500).json('There was an error*')
         }
     }
-    
-    static getHospitals = async (req: Request,res:Response)=>{
+
+    static getHospitals = async (req: Request, res: Response) => {
         try {
             const hospitals = await Hospital.find()
             res.json(hospitals)

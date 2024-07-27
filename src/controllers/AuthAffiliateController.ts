@@ -33,7 +33,7 @@ export class AuthAffiliateController {
             //Verificar si está afiliado
             const dniAffiliateExist = await Affiliate.findOne({ dni })
             if (!dniAffiliateExist) {
-                const error = new Error('The user is already registered')
+                const error = new Error('The user is not affiliated with the insurance')
                 return res.status(409).json({ error: error.message })
             }
 
