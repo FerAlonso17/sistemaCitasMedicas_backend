@@ -162,7 +162,7 @@ export class AdminController {
                 return res.status(400).json({ error: 'Doctor not found' });
             }
             // Verificar si hay citas en la especialidad
-            const hasAppointments = record.specialityRecord[matchingSpecialityIndex].doctorRecord[matchingDoctorIndex].appointmentsRecord.some(
+            const hasAppointments = record?.specialityRecord[matchingSpecialityIndex]?.doctorRecord[matchingDoctorIndex]?.appointmentsRecord?.some(
                 (doctor) => doctor.appointmentsRecord.length > 0
             );
 
