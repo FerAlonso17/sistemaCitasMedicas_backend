@@ -140,7 +140,7 @@ export class AdminController {
         const { specialityR, doctorR } = req.body;
 
         try {
-            const record = await Record.findById(id).populate('specialityRecord.doctorRecord.appointmentsRecord')
+            const record = await Record.findById(id)
             if (!record) {
                 const error = new Error('Record not found')
                 return res.status(404).json({ error: error.message })
@@ -162,13 +162,13 @@ export class AdminController {
                 return res.status(400).json({ error: 'Doctor not found' });
             }
             // Verificar si hay citas en la especialidad
-            const hasAppointments = record.specialityRecord[matchingSpecialityIndex].doctorRecord[matchingDoctorIndex].appointmentsRecord.some(
-                (doctor) => doctor.appointmentsRecord.length > 0
-            );
+            // const hasAppointments = record.specialityRecord[matchingSpecialityIndex].doctorRecord[matchingDoctorIndex].appointmentsRecord.some(
+            //     (doctor) => doctor.appointmentsRecord.length > 0
+            // );
 
-            if (hasAppointments) {
-                return res.status(400).json({ error: 'You have to reschedule appointments before' });
-            }
+            // if (hasAppointments) {
+            //     return res.status(400).json({ error: 'You have to reschedule appointments before' });
+            // }
             if (record.specialityRecord[matchingSpecialityIndex].doctorRecord.length==1) {
                 record.specialityRecord.splice(matchingSpecialityIndex, 1);
             } else {
